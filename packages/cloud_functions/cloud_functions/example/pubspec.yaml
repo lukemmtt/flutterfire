@@ -4,6 +4,7 @@ resolution: workspace
 
 environment:
   sdk: '^3.6.0'
+  flutter: '>=3.27.0'
 
 dependencies:
   cloud_functions: ^6.1.0

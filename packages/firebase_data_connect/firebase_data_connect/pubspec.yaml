@@ -9,6 +9,7 @@ false_secrets:
 
 environment:
   sdk: '^3.6.0'
+  flutter: '>=3.27.0'
 
 dependencies:
   crypto: ^3.0.6

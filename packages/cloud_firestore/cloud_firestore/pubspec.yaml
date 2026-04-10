@@ -18,6 +18,7 @@ false_secrets:
 
 environment:
   sdk: '^3.6.0'
+  flutter: '>=3.27.0'
 
 dependencies:
   cloud_firestore_platform_interface: ^7.1.0

@@ -15,6 +15,7 @@ false_secrets:
 
 environment:
   sdk: '^3.6.0'
+  flutter: '>=3.27.0'
 
 dependencies:
   cloud_functions_platform_interface: ^5.8.11
