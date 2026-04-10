@@ -328,37 +328,43 @@ melos:
       # "check-license-header".
       run: |
         addlicense -f header_template.txt \
-          --ignore "**/*.gradle" \
-          --ignore "**/*.yml" \
-          --ignore "**/*.yaml" \
-          --ignore "**/*.xml" \
+          --ignore "**/.dart_tool/**" \
+          --ignore "**/*.cmake" \
           --ignore "**/*.g.dart" \
-          --ignore "**/*.sh" \
-          --ignore "**/*.html" \
-          --ignore "**/*.js" \
-          --ignore "**/*.ts" \
           --ignore "**/*.g.h" \
           --ignore "**/*.g.m" \
+          --ignore "**/*.gradle" \
+          --ignore "**/*.html" \
+          --ignore "**/*.js" \
           --ignore "**/*.rb" \
+          --ignore "**/*.sh" \
+          --ignore "**/*.ts" \
           --ignore "**/*.txt" \
-          --ignore "**/*.cmake" \
-          --ignore "**/Runner/AppDelegate.swift" \
-          --ignore "**/Runner/MainFlutterWindow.swift" \
-          --ignore "**/Runner/Runner-Bridging-Header.h" \
-          --ignore "**/Runner/AppDelegate.h" \
-          --ignore "**/Runner/AppDelegate.m" \
-          --ignore "**/Runner/main.m" \
-          --ignore "**/MainActivity.kt" \
-          --ignore "**/MainActivity.java" \
-          --ignore "**/FlutterMultiDexApplication.java" \
-          --ignore "**/GeneratedPluginRegistrant.swift" \
-          --ignore "**/Pods/**" \
-          --ignore "**/generated/**" \
-          --ignore "**/flutter/generated_plugin_registrant.h" \
-          --ignore "**/flutter/generated_plugin_registrant.cc" \
+          --ignore "**/*.xml" \
+          --ignore "**/*.yaml" \
+          --ignore "**/*.yml" \
           --ignore "**/android/app/build.gradle.kts" \
           --ignore "**/android/build.gradle.kts" \
           --ignore "**/android/settings.gradle.kts" \
+          --ignore "**/build/**" \
+          --ignore "**/ephemeral/**" \
+          --ignore "**/flutter/generated_plugin_registrant.cc" \
+          --ignore "**/flutter/generated_plugin_registrant.h" \
+          --ignore "**/FlutterMultiDexApplication.java" \
+          --ignore "**/generated/**" \
+          --ignore "**/GeneratedPluginRegistrant.h" \
+          --ignore "**/GeneratedPluginRegistrant.java" \
+          --ignore "**/GeneratedPluginRegistrant.m" \
+          --ignore "**/GeneratedPluginRegistrant.swift" \
+          --ignore "**/MainActivity.java" \
+          --ignore "**/MainActivity.kt" \
+          --ignore "**/Pods/**" \
+          --ignore "**/Runner/AppDelegate.h" \
+          --ignore "**/Runner/AppDelegate.m" \
+          --ignore "**/Runner/AppDelegate.swift" \
+          --ignore "**/Runner/main.m" \
+          --ignore "**/Runner/MainFlutterWindow.swift" \
+          --ignore "**/Runner/Runner-Bridging-Header.h" \
           --ignore "**/RunnerTests/RunnerTests.swift" \
           .
       description: Add a license header to all necessary files.
@@ -369,37 +375,43 @@ melos:
       run: |
         addlicense -f header_template.txt \
           --check \
-          --ignore "**/*.gradle" \
-          --ignore "**/*.yml" \
-          --ignore "**/*.yaml" \
-          --ignore "**/*.xml" \
+          --ignore "**/.dart_tool/**" \
+          --ignore "**/*.cmake" \
           --ignore "**/*.g.dart" \
-          --ignore "**/*.sh" \
-          --ignore "**/*.html" \
-          --ignore "**/*.js" \
-          --ignore "**/*.ts" \
           --ignore "**/*.g.h" \
           --ignore "**/*.g.m" \
+          --ignore "**/*.gradle" \
+          --ignore "**/*.html" \
+          --ignore "**/*.js" \
           --ignore "**/*.rb" \
+          --ignore "**/*.sh" \
+          --ignore "**/*.ts" \
           --ignore "**/*.txt" \
-          --ignore "**/*.cmake" \
-          --ignore "**/Runner/AppDelegate.swift" \
-          --ignore "**/Runner/MainFlutterWindow.swift" \
-          --ignore "**/Runner/Runner-Bridging-Header.h" \
-          --ignore "**/Runner/AppDelegate.h" \
-          --ignore "**/Runner/AppDelegate.m" \
-          --ignore "**/Runner/main.m" \
-          --ignore "**/MainActivity.kt" \
-          --ignore "**/MainActivity.java" \
-          --ignore "**/FlutterMultiDexApplication.java" \
-          --ignore "**/GeneratedPluginRegistrant.swift" \
-          --ignore "**/Pods/**" \
-          --ignore "**/generated/**" \
-          --ignore "**/flutter/generated_plugin_registrant.h" \
-          --ignore "**/flutter/generated_plugin_registrant.cc" \
+          --ignore "**/*.xml" \
+          --ignore "**/*.yaml" \
+          --ignore "**/*.yml" \
           --ignore "**/android/app/build.gradle.kts" \
           --ignore "**/android/build.gradle.kts" \
           --ignore "**/android/settings.gradle.kts" \
+          --ignore "**/build/**" \
+          --ignore "**/ephemeral/**" \
+          --ignore "**/flutter/generated_plugin_registrant.cc" \
+          --ignore "**/flutter/generated_plugin_registrant.h" \
+          --ignore "**/FlutterMultiDexApplication.java" \
+          --ignore "**/generated/**" \
+          --ignore "**/GeneratedPluginRegistrant.h" \
+          --ignore "**/GeneratedPluginRegistrant.java" \
+          --ignore "**/GeneratedPluginRegistrant.m" \
+          --ignore "**/GeneratedPluginRegistrant.swift" \
+          --ignore "**/MainActivity.java" \
+          --ignore "**/MainActivity.kt" \
+          --ignore "**/Pods/**" \
+          --ignore "**/Runner/AppDelegate.h" \
+          --ignore "**/Runner/AppDelegate.m" \
+          --ignore "**/Runner/AppDelegate.swift" \
+          --ignore "**/Runner/main.m" \
+          --ignore "**/Runner/MainFlutterWindow.swift" \
+          --ignore "**/Runner/Runner-Bridging-Header.h" \
           --ignore "**/RunnerTests/RunnerTests.swift" \
           .
       description: Add a license header to all necessary files.
