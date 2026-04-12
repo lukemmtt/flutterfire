@@ -112,6 +112,11 @@ class MethodChannelFirebaseAppCheck extends FirebaseAppCheckPlatform {
     WindowsAppCheckProvider? providerWindows,
   }) async {
     try {
+      String? windowsProvider;
+      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.windows) {
+        windowsProvider = providerWindows?.type;
+      }
+
       await _pigeonApi.activate(
         app.name,
         defaultTargetPlatform == TargetPlatform.android || kDebugMode
@@ -133,6 +138,7 @@ class MethodChannelFirebaseAppCheck extends FirebaseAppCheckPlatform {
           providerApple: providerApple,
           providerWindows: providerWindows,
         ),
+        windowsProvider,
       );
     } on PlatformException catch (e, s) {
       convertPlatformException(e, s);
