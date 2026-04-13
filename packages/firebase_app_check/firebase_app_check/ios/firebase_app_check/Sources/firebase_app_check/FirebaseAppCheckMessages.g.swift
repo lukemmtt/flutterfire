@@ -71,11 +71,182 @@ private func nilOrValue<T>(_ value: Any?) -> T? {
   return value as! T?
 }
 
+private func doubleEqualsFirebaseAppCheckMessages(_ lhs: Double, _ rhs: Double) -> Bool {
+  return (lhs.isNaN && rhs.isNaN) || lhs == rhs
+}
+
+private func doubleHashFirebaseAppCheckMessages(_ value: Double, _ hasher: inout Hasher) {
+  if value.isNaN {
+    hasher.combine(0x7FF8000000000000)
+  } else {
+    // Normalize -0.0 to 0.0
+    hasher.combine(value == 0 ? 0 : value)
+  }
+}
+
+func deepEqualsFirebaseAppCheckMessages(_ lhs: Any?, _ rhs: Any?) -> Bool {
+  let cleanLhs = nilOrValue(lhs) as Any?
+  let cleanRhs = nilOrValue(rhs) as Any?
+  switch (cleanLhs, cleanRhs) {
+  case (nil, nil):
+    return true
+
+  case (nil, _), (_, nil):
+    return false
+
+  case (let lhs as AnyObject, let rhs as AnyObject) where lhs === rhs:
+    return true
+
+  case is (Void, Void):
+    return true
+
+  case (let lhsArray, let rhsArray) as ([Any?], [Any?]):
+    guard lhsArray.count == rhsArray.count else { return false }
+    for (index, element) in lhsArray.enumerated() {
+      if !deepEqualsFirebaseAppCheckMessages(element, rhsArray[index]) {
+        return false
+      }
+    }
+    return true
+
+  case (let lhsArray, let rhsArray) as ([Double], [Double]):
+    guard lhsArray.count == rhsArray.count else { return false }
+    for (index, element) in lhsArray.enumerated() {
+      if !doubleEqualsFirebaseAppCheckMessages(element, rhsArray[index]) {
+        return false
+      }
+    }
+    return true
+
+  case (let lhsDictionary, let rhsDictionary) as ([AnyHashable: Any?], [AnyHashable: Any?]):
+    guard lhsDictionary.count == rhsDictionary.count else { return false }
+    for (lhsKey, lhsValue) in lhsDictionary {
+      var found = false
+      for (rhsKey, rhsValue) in rhsDictionary {
+        if deepEqualsFirebaseAppCheckMessages(lhsKey, rhsKey) {
+          if deepEqualsFirebaseAppCheckMessages(lhsValue, rhsValue) {
+            found = true
+            break
+          } else {
+            return false
+          }
+        }
+      }
+      if !found { return false }
+    }
+    return true
+
+  case (let lhs as Double, let rhs as Double):
+    return doubleEqualsFirebaseAppCheckMessages(lhs, rhs)
+
+  case (let lhsHashable, let rhsHashable) as (AnyHashable, AnyHashable):
+    return lhsHashable == rhsHashable
+
+  default:
+    return false
+  }
+}
+
+func deepHashFirebaseAppCheckMessages(value: Any?, hasher: inout Hasher) {
+  let cleanValue = nilOrValue(value) as Any?
+  if let cleanValue = cleanValue {
+    if let doubleValue = cleanValue as? Double {
+      doubleHashFirebaseAppCheckMessages(doubleValue, &hasher)
+    } else if let valueList = cleanValue as? [Any?] {
+      for item in valueList {
+        deepHashFirebaseAppCheckMessages(value: item, hasher: &hasher)
+      }
+    } else if let valueList = cleanValue as? [Double] {
+      for item in valueList {
+        doubleHashFirebaseAppCheckMessages(item, &hasher)
+      }
+    } else if let valueDict = cleanValue as? [AnyHashable: Any?] {
+      var result = 0
+      for (key, value) in valueDict {
+        var entryKeyHasher = Hasher()
+        deepHashFirebaseAppCheckMessages(value: key, hasher: &entryKeyHasher)
+        var entryValueHasher = Hasher()
+        deepHashFirebaseAppCheckMessages(value: value, hasher: &entryValueHasher)
+        result = result &+ ((entryKeyHasher.finalize() &* 31) ^ entryValueHasher.finalize())
+      }
+      hasher.combine(result)
+    } else if let hashableValue = cleanValue as? AnyHashable {
+      hasher.combine(hashableValue)
+    } else {
+      hasher.combine(String(describing: cleanValue))
+    }
+  } else {
+    hasher.combine(0)
+  }
+}
+
+
+/// Carries a minted App Check token plus the wall-clock expiry the Firebase
+/// SDK should associate with it. Returning the expiry alongside the token lets
+/// backends mint tokens with arbitrary lifetimes (short TTLs for a stricter
+/// security posture, longer TTLs for fewer round-trips) without the plugin
+/// hardcoding a refresh window.
+///
+/// Generated class from Pigeon that represents data sent in messages.
+struct CustomAppCheckToken: Hashable {
+  /// The App Check token string to send with Firebase requests.
+  var token: String
+  /// Absolute expiry as Unix epoch milliseconds (UTC). The Firebase SDK uses
+  /// this to decide when to refresh; a token returned with an expiry in the
+  /// past is treated as immediately expired.
+  var expireTimeMillis: Int64
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> CustomAppCheckToken? {
+    let token = pigeonVar_list[0] as! String
+    let expireTimeMillis = pigeonVar_list[1] as! Int64
+
+    return CustomAppCheckToken(
+      token: token,
+      expireTimeMillis: expireTimeMillis
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      token,
+      expireTimeMillis,
+    ]
+  }
+  static func == (lhs: CustomAppCheckToken, rhs: CustomAppCheckToken) -> Bool {
+    if Swift.type(of: lhs) != Swift.type(of: rhs) {
+      return false
+    }
+    return deepEqualsFirebaseAppCheckMessages(lhs.token, rhs.token) && deepEqualsFirebaseAppCheckMessages(lhs.expireTimeMillis, rhs.expireTimeMillis)
+  }
+
+  func hash(into hasher: inout Hasher) {
+    hasher.combine("CustomAppCheckToken")
+    deepHashFirebaseAppCheckMessages(value: token, hasher: &hasher)
+    deepHashFirebaseAppCheckMessages(value: expireTimeMillis, hasher: &hasher)
+  }
+}
 
 private class FirebaseAppCheckMessagesPigeonCodecReader: FlutterStandardReader {
+  override func readValue(ofType type: UInt8) -> Any? {
+    switch type {
+    case 129:
+      return CustomAppCheckToken.fromList(self.readValue() as! [Any?])
+    default:
+      return super.readValue(ofType: type)
+    }
+  }
 }
 
 private class FirebaseAppCheckMessagesPigeonCodecWriter: FlutterStandardWriter {
+  override func writeValue(_ value: Any) {
+    if let value = value as? CustomAppCheckToken {
+      super.writeByte(129)
+      super.writeValue(value.toList())
+    } else {
+      super.writeValue(value)
+    }
+  }
 }
 
 private class FirebaseAppCheckMessagesPigeonCodecReaderWriter: FlutterStandardReaderWriter {
@@ -201,9 +372,16 @@ class FirebaseAppCheckHostApiSetup {
     }
   }
 }
+/// Dart-side handler invoked by the native plugin when the Firebase SDK needs
+/// a fresh App Check token. Implementations typically call a backend service
+/// (for example a Cloud Function with `enforceAppCheck: false`) that mints a
+/// token using the Firebase Admin SDK. The native side awaits the future,
+/// then hands the token to the Firebase SDK, which attaches it to subsequent
+/// Firebase backend requests (Firestore, Functions, Storage, Auth, RTDB).
+///
 /// Generated protocol from Pigeon that represents Flutter messages that can be called from Swift.
 protocol FirebaseAppCheckFlutterApiProtocol {
-  func getCustomToken(completion: @escaping (Result<String, PigeonError>) -> Void)
+  func getCustomToken(completion: @escaping (Result<CustomAppCheckToken, PigeonError>) -> Void)
 }
 class FirebaseAppCheckFlutterApi: FirebaseAppCheckFlutterApiProtocol {
   private let binaryMessenger: FlutterBinaryMessenger
@@ -215,7 +393,7 @@ class FirebaseAppCheckFlutterApi: FirebaseAppCheckFlutterApiProtocol {
   var codec: FirebaseAppCheckMessagesPigeonCodec {
     return FirebaseAppCheckMessagesPigeonCodec.shared
   }
-  func getCustomToken(completion: @escaping (Result<String, PigeonError>) -> Void) {
+  func getCustomToken(completion: @escaping (Result<CustomAppCheckToken, PigeonError>) -> Void) {
     let channelName: String = "dev.flutter.pigeon.firebase_app_check_platform_interface.FirebaseAppCheckFlutterApi.getCustomToken\(messageChannelSuffix)"
     let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
     channel.sendMessage(nil) { response in
@@ -231,7 +409,7 @@ class FirebaseAppCheckFlutterApi: FirebaseAppCheckFlutterApiProtocol {
       } else if listResponse[0] == nil {
         completion(.failure(PigeonError(code: "null-error", message: "Flutter api returned null value for non-null return value.", details: "")))
       } else {
-        let result = listResponse[0] as! String
+        let result = listResponse[0] as! CustomAppCheckToken
         completion(.success(result))
       }
     }
