@@ -47,6 +47,10 @@
                                  serverTimestampBehavior:
                                      (FIRServerTimestampBehavior)serverTimestampBehavior;
 
++ (PigeonDocumentChange *_Nonnull)
+    toPigeonDocumentChange:(FIRDocumentChange *_Nonnull)documentChange
+            pigeonDocument:(PigeonDocumentSnapshot *_Nonnull)pigeonDocument;
+
 + (NSArray<PigeonDocumentChange *> *_Nonnull)
     toPigeonDocumentChanges:(NSArray<FIRDocumentChange *> *_Nonnull)documentChanges
     serverTimestampBehavior:(FIRServerTimestampBehavior)serverTimestampBehavior;

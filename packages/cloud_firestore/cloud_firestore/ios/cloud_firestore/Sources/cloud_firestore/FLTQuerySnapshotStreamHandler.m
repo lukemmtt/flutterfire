@@ -14,6 +14,28 @@
 #import "include/cloud_firestore/Private/FirestorePigeonParser.h"
 #import "include/cloud_firestore/Public/CustomPigeonHeaderFirestore.h"
 
+static NSTimeInterval const kFLTSlowQuerySnapshotSerializationThreshold = 0.1;
+static NSUInteger const kFLTLargeQuerySnapshotThreshold = 100;
+
+static void FLTLogSlowQuerySnapshotSerialization(FIRQuerySnapshot *snapshot,
+                                                 BOOL callbackWasOnMainThread,
+                                                 CFTimeInterval serializationDuration,
+                                                 CFTimeInterval emitDuration) {
+  if (serializationDuration < kFLTSlowQuerySnapshotSerializationThreshold &&
+      snapshot.documents.count < kFLTLargeQuerySnapshotThreshold &&
+      snapshot.documentChanges.count < kFLTLargeQuerySnapshotThreshold) {
+    return;
+  }
+
+  NSLog(
+      @"FLTFirebaseFirestore: query snapshot serialization took %.1fms for %lu documents and "
+      @"%lu changes (callback thread=%@, fromCache=%@, pendingWrites=%@, emit=%.1fms)",
+      serializationDuration * 1000.0, (unsigned long)snapshot.documents.count,
+      (unsigned long)snapshot.documentChanges.count, callbackWasOnMainThread ? @"main" : @"firestore",
+      snapshot.metadata.isFromCache ? @"YES" : @"NO",
+      snapshot.metadata.hasPendingWrites ? @"YES" : @"NO", emitDuration * 1000.0);
+}
+
 @interface FLTQuerySnapshotStreamHandler ()
 @property(readwrite, strong) id<FIRListenerRegistration> listenerRegistration;
 @end
@@ -34,6 +56,50 @@
     _source = source;
   }
   return self;
+}
+
+- (NSArray *)querySnapshotPayloadFromSnapshot:(FIRQuerySnapshot *)snapshot {
+  NSMutableArray *toListResult = [[NSMutableArray alloc] initWithCapacity:3];
+  NSMutableArray *documents =
+      [[NSMutableArray alloc] initWithCapacity:snapshot.documents.count];
+  NSMutableArray *documentChanges =
+      [[NSMutableArray alloc] initWithCapacity:snapshot.documentChanges.count];
+  NSMutableDictionary<NSString *, PigeonDocumentSnapshot *> *documentsByPath =
+      [[NSMutableDictionary alloc] initWithCapacity:snapshot.documents.count];
+
+  for (FIRDocumentSnapshot *documentSnapshot in snapshot.documents) {
+    @autoreleasepool {
+      PigeonDocumentSnapshot *pigeonDocument =
+          [FirestorePigeonParser toPigeonDocumentSnapshot:documentSnapshot
+                                  serverTimestampBehavior:self.serverTimestampBehavior];
+      documentsByPath[documentSnapshot.reference.path] = pigeonDocument;
+      [documents addObject:[pigeonDocument toList]];
+    }
+  }
+
+  for (FIRDocumentChange *documentChange in snapshot.documentChanges) {
+    @autoreleasepool {
+      NSString *documentPath = documentChange.document.reference.path;
+      PigeonDocumentSnapshot *pigeonDocument = documentsByPath[documentPath];
+      if (pigeonDocument == nil) {
+        pigeonDocument =
+            [FirestorePigeonParser toPigeonDocumentSnapshot:documentChange.document
+                                    serverTimestampBehavior:self.serverTimestampBehavior];
+        documentsByPath[documentPath] = pigeonDocument;
+      }
+      PigeonDocumentChange *pigeonDocumentChange =
+          [FirestorePigeonParser toPigeonDocumentChange:documentChange
+                                         pigeonDocument:pigeonDocument];
+      [documentChanges addObject:[pigeonDocumentChange toList]];
+    }
+  }
+
+  [toListResult addObject:documents];
+  [toListResult addObject:documentChanges];
+  [toListResult
+      addObject:[[FirestorePigeonParser toPigeonSnapshotMetadata:snapshot.metadata] toList]];
+
+  return toListResult;
 }
 
 - (FlutterError *_Nullable)onListenWithArguments:(id _Nullable)arguments
@@ -64,33 +130,17 @@
                                           andOptionalNSError:error]);
       });
     } else {
+      BOOL callbackWasOnMainThread = [NSThread isMainThread];
+      CFAbsoluteTime serializationStart = CFAbsoluteTimeGetCurrent();
+      NSArray *toListResult = [self querySnapshotPayloadFromSnapshot:snapshot];
+      CFTimeInterval serializationDuration = CFAbsoluteTimeGetCurrent() - serializationStart;
+
       dispatch_async(dispatch_get_main_queue(), ^{
-        NSMutableArray *toListResult = [[NSMutableArray alloc] initWithCapacity:3];
-
-        NSMutableArray *documents =
-            [[NSMutableArray alloc] initWithCapacity:snapshot.documents.count];
-        NSMutableArray *documentChanges =
-            [[NSMutableArray alloc] initWithCapacity:snapshot.documentChanges.count];
-
-        for (FIRDocumentSnapshot *documentSnapshot in snapshot.documents) {
-          [documents addObject:[[FirestorePigeonParser
-                                   toPigeonDocumentSnapshot:documentSnapshot
-                                    serverTimestampBehavior:self.serverTimestampBehavior] toList]];
-        }
-
-        for (FIRDocumentChange *documentChange in snapshot.documentChanges) {
-          [documentChanges
-              addObject:[[FirestorePigeonParser toPigeonDocumentChange:documentChange
-                                               serverTimestampBehavior:self.serverTimestampBehavior]
-                            toList]];
-        }
-
-        [toListResult addObject:documents];
-        [toListResult addObject:documentChanges];
-        [toListResult
-            addObject:[[FirestorePigeonParser toPigeonSnapshotMetadata:snapshot.metadata] toList]];
-
+        CFAbsoluteTime emitStart = CFAbsoluteTimeGetCurrent();
         events(toListResult);
+        FLTLogSlowQuerySnapshotSerialization(
+            snapshot, callbackWasOnMainThread, serializationDuration,
+            CFAbsoluteTimeGetCurrent() - emitStart);
       });
     }
   };

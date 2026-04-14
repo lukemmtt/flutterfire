@@ -252,6 +252,16 @@
 + (PigeonDocumentChange *_Nonnull)toPigeonDocumentChange:(FIRDocumentChange *_Nonnull)documentChange
                                  serverTimestampBehavior:
                                      (FIRServerTimestampBehavior)serverTimestampBehavior {
+  PigeonDocumentSnapshot *pigeonDocument =
+      [FirestorePigeonParser toPigeonDocumentSnapshot:documentChange.document
+                              serverTimestampBehavior:serverTimestampBehavior];
+  return [FirestorePigeonParser toPigeonDocumentChange:documentChange
+                                        pigeonDocument:pigeonDocument];
+}
+
++ (PigeonDocumentChange *_Nonnull)
+    toPigeonDocumentChange:(FIRDocumentChange *_Nonnull)documentChange
+            pigeonDocument:(PigeonDocumentSnapshot *_Nonnull)pigeonDocument {
   NSNumber *oldIndex;
   NSNumber *newIndex;
 
@@ -275,8 +285,7 @@
 
   return [PigeonDocumentChange
       makeWithType:[FirestorePigeonParser toPigeonDocumentChangeType:documentChange.type]
-          document:[FirestorePigeonParser toPigeonDocumentSnapshot:documentChange.document
-                                           serverTimestampBehavior:serverTimestampBehavior]
+          document:pigeonDocument
           oldIndex:oldIndex
           newIndex:newIndex];
 }
