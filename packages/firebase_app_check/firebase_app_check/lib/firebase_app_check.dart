@@ -29,7 +29,6 @@ export 'package:firebase_app_check_platform_interface/firebase_app_check_platfor
         WindowsAppCheckProvider,
         WindowsDebugProvider,
         WindowsCustomProvider,
-        FirebaseAppCheckFlutterApi,
         CustomAppCheckToken;
 export 'package:firebase_core_platform_interface/firebase_core_platform_interface.dart'
     show FirebaseException;
